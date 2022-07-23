@@ -2,10 +2,10 @@ import asyncio
 from collections import deque
 from typing import Dict, Set
 
-import libtmux
 import pynvml
 
 from .status import *
+from .tmux import get_tmux_sessions
 
 
 class GpuHostedTask:
@@ -13,11 +13,12 @@ class GpuHostedTask:
         self.job_id = job_id
         self.cmd = cmd
         self.state = PENDING
+        self.gpu_idx = ""
 
     def update_state(self):
-        server = libtmux.Server()
-        session = server.find_where({"session_name": self.session_name})
-        if self.state == RUNNING and session is None:
+        sessions = get_tmux_sessions()
+        is_running = self.session_name in sessions
+        if self.state == RUNNING and not is_running:
             self.state = DONE
 
     def submit(self, gpu_idx):

@@ -1,5 +1,7 @@
 from setuptools import setup
 
+install_requires = ["pynvml", "rich", "sh", "omegaconf"]
+
 setup(
     name="submas",
     version="1.0",
@@ -9,5 +11,6 @@ setup(
     entry_points={
         "console_scripts": ["submas=submas:main"],
     },
+    install_requires=install_requires,
     packages=["submas"],
 )

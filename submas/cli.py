@@ -15,7 +15,7 @@ from .status import *
 
 
 def generate_status_table(jobs):
-    palette = {RUNNING: "red", DONE: "green", PENDING: "grey"}
+    palette = {RUNNING: "red", DONE: "green", PENDING: "grey30"}
 
     table = Table("", "Job Id", "Status", "GPU", box=box.HORIZONTALS, show_edge=False)
     for job in jobs:
@@ -23,7 +23,7 @@ def generate_status_table(jobs):
         job_id = job.job_id
         color = palette[state]
         progress_icon = spinner.Spinner("arrow3", style="red") if job.is_running else ""
-        table.add_row(progress_icon, job_id, f"[{color}]{state}")
+        table.add_row(progress_icon, job_id, f"[{color}]{state}", f"{job.gpu_idx}")
     return table
 
 
@@ -47,9 +47,9 @@ async def run(jobs: Dict[str, str], num_alloc_gpus=1, interval=0.5):
             is_allowed = len(own_using_gpu_indices) < num_alloc_gpus
             is_any_gpu_available = len(available_gpu_indices)
 
-            if is_allowed and is_any_gpu_available and job_que or True:  # HACK
-                # gpu_idx = available_gpu_indices.pop() # HACK
-                gpu_idx = 0
+            if is_allowed and is_any_gpu_available and job_que:
+                gpu_idx = available_gpu_indices.pop()  # HACK
+                # gpu_idx = 0
                 job = job_que.pop()
                 coro = job.submit(gpu_idx)
                 submitted_que.append(job)

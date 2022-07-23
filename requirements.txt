@@ -5,5 +5,4 @@ flake8
 black
 isort
 sh
-libtmux
 omegaconf
