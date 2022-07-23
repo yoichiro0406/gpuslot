@@ -14,7 +14,7 @@ from .core import find_available_gpu_indices, gather_using_gpu_indices, initiali
 from .status import *
 
 
-def generate_status_table(jobs):
+def generate_status_table(jobs: deque) -> Table:
     palette = {RUNNING: "red", DONE: "green", PENDING: "grey30"}
 
     table = Table("", "Job Id", "Status", "GPU", box=box.HORIZONTALS, show_edge=False)
@@ -27,14 +27,16 @@ def generate_status_table(jobs):
     return table
 
 
-def check_exist_running_job(job_que):
+def check_exist_running_job(job_que: deque) -> bool:
     exist_running_job = False
     for job in job_que:
         exist_running_job = exist_running_job or job.is_running
     return exist_running_job
 
 
-async def run(jobs: Dict[str, str], num_alloc_gpus=1, interval=0.5):
+async def run(
+    jobs: Dict[str, str], num_alloc_gpus: int = 1, interval: float = 0.5
+) -> None:
     job_que = initialize_jobs(jobs)
     submitted_que = deque()
 

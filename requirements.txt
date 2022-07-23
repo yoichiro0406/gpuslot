@@ -5,4 +5,5 @@ flake8
 black
 isort
 sh
+mypy
 omegaconf

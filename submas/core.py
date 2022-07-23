@@ -21,7 +21,7 @@ class GpuHostedTask:
         if self.state == RUNNING and not is_running:
             self.state = DONE
 
-    def submit(self, gpu_idx):
+    def submit(self, gpu_idx) -> asyncio.subprocess.Process:
         python_cmd = f"env CUDA_VISIBLE_DEVICES={gpu_idx} {self.cmd}"
         cmd = f"tmux new-session -s {self.session_name} -d {python_cmd}"
         coro = asyncio.create_subprocess_shell(cmd)
@@ -46,7 +46,7 @@ def initialize_jobs(jobs: Dict[str, str]) -> deque:
     return job_que
 
 
-def gather_using_gpu_indices(jobs):
+def gather_using_gpu_indices(jobs: GpuHostedTask) -> Set[int]:
     own_using_gpus = set()
     for job in jobs:
         if job.is_running:
