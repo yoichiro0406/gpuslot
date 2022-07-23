@@ -1,11 +1,11 @@
 jobs:
-  proposed: python3 sample.py --num_sleep 10
+  proposed: python3 sample.py --num_sleep 3
   simple-baseline: python3 sample.py --num_sleep 1
   ablation: python3 sample.py --num_sleep 2
   strong-baseline: python3 sample.py --num_sleep 3
-  ablation2: python3 sample.py --num_sleep 20
-  poor-baseline: python3 sample.py --num_sleep 5
-  naive: python3 sample.py --num_sleep 5
-  baseline6: python3 sample.py --num_sleep 5
+  ablation2: python3 sample.py --num_sleep 15
+  poor-baseline: python3 sample.py --num_sleep 4
+  naive: python3 sample.py --num_sleep 2
+  baseline: python3 sample.py --num_sleep 5
 num_alloc_gpus: 3
 interval: 0.5

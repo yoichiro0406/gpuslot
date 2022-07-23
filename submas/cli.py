@@ -38,7 +38,7 @@ async def run(jobs: Dict[str, str], num_alloc_gpus=1, interval=0.5):
     job_que = initialize_jobs(jobs)
     submitted_que = deque()
 
-    with Live(generate_status_table(job_que), refresh_per_second=4) as live:
+    with Live(generate_status_table(job_que), refresh_per_second=20) as live:
         while job_que or check_exist_running_job(submitted_que):
             available_gpu_indices = find_available_gpu_indices()
             own_using_gpu_indices = gather_using_gpu_indices(submitted_que)
