@@ -1,6 +1,6 @@
 from setuptools import setup
 
-install_requires = ["pynvml", "rich", "sh", "omegaconf"]
+install_requires = ["pynvml", "rich", "sh", "omegaconf", "loguru"]
 
 setup(
     name="submas",

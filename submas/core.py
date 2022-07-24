@@ -3,6 +3,7 @@ from collections import deque
 from typing import Dict, Set
 
 import pynvml
+from loguru import logger
 
 from .status import *
 from .tmux import get_tmux_sessions
@@ -20,6 +21,7 @@ class GpuHostedTask:
         is_running = self.session_name in sessions
         if self.state == RUNNING and not is_running:
             self.state = DONE
+            logger.info(f"Job Id: {self.job_id} DONE")
 
     def submit(self, gpu_idx) -> asyncio.subprocess.Process:
         python_cmd = f"env CUDA_VISIBLE_DEVICES={gpu_idx} {self.cmd}"
@@ -27,6 +29,7 @@ class GpuHostedTask:
         coro = asyncio.create_subprocess_shell(cmd)
         self.state = RUNNING
         self.gpu_idx = gpu_idx
+        logger.info(f"Job Id: {self.job_id} SUBMITTED")
         return coro
 
     @property
@@ -65,3 +68,10 @@ def find_available_gpu_indices() -> Set[int]:
             available_gpu_indices.add(gpu_idx)
 
     return available_gpu_indices
+
+
+def check_exist_running_job(job_que: deque) -> bool:
+    exist_running_job = False
+    for job in job_que:
+        exist_running_job = exist_running_job or job.is_running
+    return exist_running_job

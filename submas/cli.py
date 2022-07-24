@@ -1,16 +1,24 @@
 import argparse
 import asyncio
+import os
+import sys
 import time
 from collections import deque
 from typing import Dict
 
 import pynvml
+from loguru import logger
 from omegaconf import OmegaConf
 from rich import box, spinner
 from rich.live import Live
 from rich.table import Table
 
-from .core import find_available_gpu_indices, gather_using_gpu_indices, initialize_jobs
+from .core import (
+    check_exist_running_job,
+    find_available_gpu_indices,
+    gather_using_gpu_indices,
+    initialize_jobs,
+)
 from .status import *
 
 
@@ -27,16 +35,13 @@ def generate_status_table(jobs: deque) -> Table:
     return table
 
 
-def check_exist_running_job(job_que: deque) -> bool:
-    exist_running_job = False
-    for job in job_que:
-        exist_running_job = exist_running_job or job.is_running
-    return exist_running_job
-
-
 async def run(
-    jobs: Dict[str, str], num_alloc_gpus: int = 1, interval: float = 0.5
+    jobs: Dict[str, str],
+    num_alloc_gpus: int = 1,
+    interval: float = 0.5,
+    log_path: str = "main.log",
 ) -> None:
+    logger.add(log_path)
     job_que = initialize_jobs(jobs)
     submitted_que = deque()
 
@@ -50,8 +55,7 @@ async def run(
             is_any_gpu_available = len(available_gpu_indices)
 
             if is_allowed and is_any_gpu_available and job_que:
-                gpu_idx = available_gpu_indices.pop()  # HACK
-                # gpu_idx = 0
+                gpu_idx = available_gpu_indices.pop()
                 job = job_que.pop()
                 coro = job.submit(gpu_idx)
                 submitted_que.append(job)
@@ -62,6 +66,19 @@ async def run(
 
             time.sleep(interval)
             live.update(generate_status_table(submitted_que + job_que))
+    logger.info("Completed all jobs")
+
+
+def setup_custom_resolver():
+    def yaml_datetime():
+        if not hasattr(yaml_datetime, "exp_datetime"):
+            exp_datetime = time.strftime("%Y_%m%d_%H%M")
+            yaml_datetime.exp_datetime = exp_datetime
+        return yaml_datetime.exp_datetime
+
+    OmegaConf.register_new_resolver("open", lambda path: OmegaConf.load(path))
+    OmegaConf.register_new_resolver("datetime", yaml_datetime)
+    OmegaConf.register_new_resolver("join", lambda a, b: os.path.join(a, b))
 
 
 def get_args():
@@ -72,7 +89,9 @@ def get_args():
 
 
 def main():
+    logger.configure(handlers=[])
     pynvml.nvmlInit()
     args = get_args()
+    setup_custom_resolver()
     cfg = OmegaConf.load(args.cfg)
     asyncio.run(run(**cfg))
