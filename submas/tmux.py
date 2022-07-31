@@ -1,9 +1,9 @@
 import re
 import subprocess
-from typing import List
+from typing import Set
 
 
-def get_tmux_sessions() -> List[str]:
+def get_tmux_sessions() -> Set[str]:
     pattern = re.compile("(\w.*): .*")
     sessions = subprocess.check_output("tmux ls", shell=True, text=True).splitlines()
     names = set()
@@ -13,6 +13,10 @@ def get_tmux_sessions() -> List[str]:
             name, *_ = re_res.groups()
             names.add(name)
     return names
+
+
+def kill_session(name) -> None:
+    subprocess.call(f"tmux kill-session -t {name}", shell=True)
 
 
 if __name__ == "__main__":

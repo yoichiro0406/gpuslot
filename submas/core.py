@@ -1,9 +1,13 @@
 import asyncio
+import time
 from collections import deque
 from typing import Dict, Set
 
 import pynvml
 from loguru import logger
+from rich import box, spinner
+from rich.live import Live
+from rich.table import Table
 
 from .status import *
 from .tmux import get_tmux_sessions
@@ -41,7 +45,7 @@ class GpuHostedTask:
         return self.state == RUNNING
 
 
-def initialize_jobs(jobs: Dict[str, str]) -> deque:
+def _initialize_jobs(jobs: Dict[str, str]) -> deque:
     job_que = deque()
     for job_id, cmd in jobs.items():
         job = GpuHostedTask(job_id, cmd)
@@ -49,7 +53,7 @@ def initialize_jobs(jobs: Dict[str, str]) -> deque:
     return job_que
 
 
-def gather_using_gpu_indices(jobs: GpuHostedTask) -> Set[int]:
+def _gather_using_gpu_indices(jobs: GpuHostedTask) -> Set[int]:
     own_using_gpus = set()
     for job in jobs:
         if job.is_running:
@@ -57,7 +61,7 @@ def gather_using_gpu_indices(jobs: GpuHostedTask) -> Set[int]:
     return own_using_gpus
 
 
-def find_available_gpu_indices() -> Set[int]:
+def _find_available_gpu_indices() -> Set[int]:
     available_gpu_indices = set()
     num_gpus = pynvml.nvmlDeviceGetCount()
 
@@ -70,8 +74,55 @@ def find_available_gpu_indices() -> Set[int]:
     return available_gpu_indices
 
 
-def check_exist_running_job(job_que: deque) -> bool:
+def _check_exist_running_job(job_que: deque) -> bool:
     exist_running_job = False
     for job in job_que:
         exist_running_job = exist_running_job or job.is_running
     return exist_running_job
+
+
+def _generate_status_table(jobs: deque) -> Table:
+    palette = {RUNNING: "red", DONE: "green", PENDING: "grey30"}
+
+    table = Table("", "Job Id", "Status", "GPU", box=box.HORIZONTALS, show_edge=False)
+    for job in jobs:
+        state = job.state
+        job_id = job.job_id
+        color = palette[state]
+        progress_icon = spinner.Spinner("arrow3", style="red") if job.is_running else ""
+        table.add_row(progress_icon, job_id, f"[{color}]{state}", f"{job.gpu_idx}")
+    return table
+
+
+async def wait_and_submit(
+    jobs: Dict[str, str],
+    num_alloc_gpus: int = 1,
+    interval: float = 0.5,
+    log_path: str = "main.log",
+) -> None:
+    logger.add(log_path)
+    job_que = _initialize_jobs(jobs)
+    submitted_que = deque()
+
+    with Live(_generate_status_table(job_que), refresh_per_second=20) as live:
+        while job_que or _check_exist_running_job(submitted_que):
+            available_gpu_indices = _find_available_gpu_indices()
+            own_using_gpu_indices = _gather_using_gpu_indices(submitted_que)
+            available_gpu_indices -= own_using_gpu_indices
+
+            is_allowed = len(own_using_gpu_indices) < num_alloc_gpus
+            is_any_gpu_available = len(available_gpu_indices)
+
+            if is_allowed and is_any_gpu_available and job_que:
+                gpu_idx = available_gpu_indices.pop()
+                job = job_que.pop()
+                coro = job.submit(gpu_idx)
+                submitted_que.append(job)
+                await coro
+
+            for job in submitted_que:
+                job.update_state()
+
+            time.sleep(interval)
+            live.update(_generate_status_table(submitted_que + job_que))
+    logger.info("Completed all jobs")
