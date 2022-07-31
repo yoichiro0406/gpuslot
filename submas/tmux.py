@@ -5,7 +5,10 @@ from typing import Set
 
 def get_tmux_sessions() -> Set[str]:
     pattern = re.compile("(\w.*): .*")
-    sessions = subprocess.check_output("tmux ls", shell=True, text=True).splitlines()
+    try:
+        sessions = subprocess.check_output("tmux ls", shell=True, text=True).splitlines()
+    except subprocess.CalledProcessError:
+        return set()
     names = set()
     for session in sessions:
         re_res = pattern.match(session)

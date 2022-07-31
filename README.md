@@ -9,8 +9,13 @@ pip install -e .
 ```
 
 ## Run
+- run
 ```sh
 cd examples
-submas --cfg job_list.yaml
+submas run --cfg job_list.yaml -n 3
 ```
 
+- kill
+```sh
+submas kill-all
+```

@@ -1,7 +1,7 @@
 import asyncio
 import time
 from collections import deque
-from typing import Dict, Set
+from typing import Dict, Set, Deque
 
 import pynvml
 from loguru import logger
@@ -13,7 +13,7 @@ from .status import *
 from .tmux import get_tmux_sessions
 
 
-class GpuHostedTask:
+class GpuHostedJob:
     def __init__(self, job_id: str, cmd: str):
         self.job_id = job_id
         self.cmd = cmd
@@ -48,12 +48,12 @@ class GpuHostedTask:
 def _initialize_jobs(jobs: Dict[str, str]) -> deque:
     job_que = deque()
     for job_id, cmd in jobs.items():
-        job = GpuHostedTask(job_id, cmd)
+        job = GpuHostedJob(job_id, cmd)
         job_que.append(job)
     return job_que
 
 
-def _gather_using_gpu_indices(jobs: GpuHostedTask) -> Set[int]:
+def _gather_using_gpu_indices(jobs: Deque[GpuHostedJob]) -> Set[int]:
     own_using_gpus = set()
     for job in jobs:
         if job.is_running:
@@ -74,14 +74,14 @@ def _find_available_gpu_indices() -> Set[int]:
     return available_gpu_indices
 
 
-def _check_exist_running_job(job_que: deque) -> bool:
+def _check_exist_running_job(job_que: Deque[GpuHostedJob]) -> bool:
     exist_running_job = False
     for job in job_que:
         exist_running_job = exist_running_job or job.is_running
     return exist_running_job
 
 
-def _generate_status_table(jobs: deque) -> Table:
+def _generate_status_table(jobs: Deque[GpuHostedJob]) -> Table:
     palette = {RUNNING: "red", DONE: "green", PENDING: "grey30"}
 
     table = Table("", "Job Id", "Status", "GPU", box=box.HORIZONTALS, show_edge=False)
@@ -97,10 +97,8 @@ def _generate_status_table(jobs: deque) -> Table:
 async def wait_and_submit(
     jobs: Dict[str, str],
     num_alloc_gpus: int = 1,
-    interval: float = 0.5,
-    log_path: str = "main.log",
+    interval: float = 1.0,
 ) -> None:
-    logger.add(log_path)
     job_que = _initialize_jobs(jobs)
     submitted_que = deque()
 

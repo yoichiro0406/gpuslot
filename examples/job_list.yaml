@@ -7,6 +7,3 @@ jobs:
   poor-baseline: python3 sample.py --sleep_sec 4
   naive: python3 sample.py --sleep_sec 2
   baseline: python3 sample.py --sleep_sec 5
-num_alloc_gpus: 3
-interval: 0.5
-log_path: ../logs/main.log

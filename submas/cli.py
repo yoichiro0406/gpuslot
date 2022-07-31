@@ -26,20 +26,25 @@ def setup_custom_resolver():
 
 @click.group()
 def main():
-    logger.configure(handlers=[])
+    pass
 
 
 @main.command()
 @click.option("--cfg")
-def run(cfg):
+@click.option("-n", "--num-gpus", type=int)
+@click.option("--log_path", default="submas.log")
+def run(cfg, num_gpus, log_path):
+    logger.configure(handlers=[{"sink": log_path}])
     pynvml.nvmlInit()
     setup_custom_resolver()
     cfg = OmegaConf.load(cfg)
-    asyncio.run(wait_and_submit(**cfg))
+    asyncio.run(wait_and_submit(cfg.jobs, num_gpus))
 
 
 @main.command()
-def kill_all():
+@click.option("--log_path", default="submas.log")
+def kill_all(log_path):
+    logger.add(log_path)
     sessions = get_tmux_sessions()
     for session in sessions:
         if session.startswith("submas-"):
