@@ -1,14 +1,15 @@
 from setuptools import setup
 
 setup(
-    name="submas",
+    name="gpuslot",
     version="1.0",
-    description="Job submitter",
+    description="Job submitter for gpus",
     author="Yoichiro Hisadome",
     author_email="hisadome0406@gmail.com",
     entry_points={
-        "console_scripts": ["submas=submas:main"],
+        "console_scripts": ["gpuslot=gpuslot:main"],
     },
-    install_requires=["pynvml", "rich", "sh", "omegaconf", "loguru", "click"],
-    packages=["submas"],
+    url="https://github.com/yoichiro0406/submas",
+    install_requires=["pynvml", "rich", "omegaconf", "loguru", "click"],
+    packages=["gpuslot"],
 )
