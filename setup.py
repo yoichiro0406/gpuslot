@@ -9,7 +9,7 @@ setup(
     entry_points={
         "console_scripts": ["gpuslot=gpuslot:main"],
     },
-    url="https://github.com/yoichiro0406/submas",
+    url="https://github.com/yoichiro0406/gpuslot",
     install_requires=["pynvml", "rich", "omegaconf", "loguru", "click"],
     packages=["gpuslot"],
 )

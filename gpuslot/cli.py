@@ -32,7 +32,7 @@ def main():
 @main.command()
 @click.option("--cfg")
 @click.option("-n", "--num-gpus", type=int)
-@click.option("--log_path", default="submas.log")
+@click.option("--log_path", default="gpuslot.log")
 def run(cfg, num_gpus, log_path):
     logger.configure(handlers=[{"sink": log_path}])
     pynvml.nvmlInit()
@@ -42,11 +42,11 @@ def run(cfg, num_gpus, log_path):
 
 
 @main.command()
-@click.option("--log_path", default="submas.log")
+@click.option("--log_path", default="gpuslot.log")
 def kill_all(log_path):
     logger.add(log_path)
     sessions = get_tmux_sessions()
     for session in sessions:
-        if session.startswith("submas-"):
+        if session.startswith("gpuslot-"):
             kill_session(session)
             logger.info(f"{session} killed")

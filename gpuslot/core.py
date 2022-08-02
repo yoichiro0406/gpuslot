@@ -38,7 +38,7 @@ class GpuHostedJob:
 
     @property
     def session_name(self):
-        return f"submas-{self.job_id}"
+        return f"gpuslot-{self.job_id}"
 
     @property
     def is_running(self):
