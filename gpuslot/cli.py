@@ -32,13 +32,14 @@ def main():
 @main.command()
 @click.option("--cfg")
 @click.option("-n", "--num-gpus", type=int)
+@click.option("-i", "--interval", type=int)
 @click.option("--log_path", default="gpuslot.log")
-def run(cfg, num_gpus, log_path):
+def run(cfg, num_gpus, interval, log_path):
     logger.configure(handlers=[{"sink": log_path}])
     pynvml.nvmlInit()
     setup_custom_resolver()
     cfg = OmegaConf.load(cfg)
-    asyncio.run(wait_and_submit(cfg.jobs, num_gpus))
+    asyncio.run(wait_and_submit(cfg.jobs, num_gpus, interval))
 
 
 @main.command()

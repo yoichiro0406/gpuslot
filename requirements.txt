@@ -7,3 +7,4 @@ isort
 mypy
 click
 omegaconf
+sh
