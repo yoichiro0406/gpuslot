@@ -1,9 +1,12 @@
 import asyncio
+import os
 import time
 from collections import deque
-from typing import Dict, Set, Deque
+from typing import Deque, Dict, Set
 
 import pynvml
+import rich
+import sh
 from loguru import logger
 from rich import box, spinner
 from rich.live import Live
@@ -11,6 +14,7 @@ from rich.table import Table
 
 from .status import *
 from .tmux import get_tmux_sessions
+from .utils import fire_and_forget
 
 
 class GpuHostedJob:
@@ -19,6 +23,9 @@ class GpuHostedJob:
         self.cmd = cmd
         self.state = PENDING
         self.gpu_idx = ""
+        self.errlog = "/tmp/gpuslot.err"
+        with open(self.errlog, "w") as _:
+            pass
 
     def update_state(self):
         sessions = get_tmux_sessions()
@@ -28,13 +35,24 @@ class GpuHostedJob:
             logger.info(f"Job Id: {self.job_id} DONE")
 
     def submit(self, gpu_idx) -> asyncio.subprocess.Process:
-        python_cmd = f"env CUDA_VISIBLE_DEVICES={gpu_idx} {self.cmd}"
-        cmd = f"tmux new-session -s {self.session_name} -d {python_cmd}"
+        python_cmd = f"env CUDA_VISIBLE_DEVICES={gpu_idx} {self.cmd} 2>| {self.errlog}"
+        cmd = f'tmux new-session -s {self.session_name} -d "{python_cmd}"'
         coro = asyncio.create_subprocess_shell(cmd)
         self.state = RUNNING
         self.gpu_idx = gpu_idx
         logger.info(f"Job Id: {self.job_id} SUBMITTED")
+        self.cast_err()
         return coro
+
+    @fire_and_forget
+    def cast_err(self):
+        is_initial = True
+        for line in sh.tail("-f", self.errlog, f"--pid={os.getgid()}", _iter=True):
+            if is_initial:
+                logger.warning(f"Job Id: {self.job_id} DIED")
+                rich.print(f"[bold red]Job Id: {self.job_id} DIED")
+                is_initial = False
+            print(line, end="")
 
     @property
     def session_name(self):

@@ -6,7 +6,9 @@ from typing import Set
 def get_tmux_sessions() -> Set[str]:
     pattern = re.compile("(\w.*): .*")
     try:
-        sessions = subprocess.check_output("tmux ls", shell=True, text=True).splitlines()
+        sessions = subprocess.check_output(
+            "tmux ls", shell=True, text=True
+        ).splitlines()
     except subprocess.CalledProcessError:
         return set()
     names = set()
